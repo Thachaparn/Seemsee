@@ -45,31 +45,36 @@ def build_sequential_llm():
     
     st.toast('กำลังให้คำแนะนำ...📝')
 
-    # get summary
-    template_sum = """Summarize the given text in {lang} into 5 words.
-    Text:
+    # get poem
+    template_poem = """You are a poet. Write a 2-stanza poem in {lang} based on the 5-word summary of the suggestion. Make the poem rhyme. Be didactic.
+
+    Suggestion:
+    Girl, if he's playing games, don't waste your time waiting around. Hit him with that confidence and live your best life. You deserve someone who's as eager to text you as you are to text them!
+
+    In love's game, don't stand still,
+    With confidence, embrace the thrill,
+    Don't linger in doubt's dark shade,
+    Forge ahead, don't be afraid.
+
+    Time's too precious, don't delay,
+    Let go of what's causing dismay,
+    With each step, a new dawn,
+    In self-assurance, you'll be drawn.
+
+
+    Suggestion:
     {suggestion}
 
     """
-    sum_template = PromptTemplate(input_variables=["lang", "suggestion"], template=template_sum)
-    sum_chain = LLMChain(llm=llm, prompt=sum_template, output_key="summary")
 
-    # get poem
-    template_poem = """You are a poet. Write a 3-stanza poem in {lang} based on the summary. Avoid repeating the summary. Make the poem rhyme as much as possible. Be didactic.
-
-    Summary:
-    {summary}
-
-    """
-
-    prompt_template = PromptTemplate(input_variables=["lang", "summary"], template=template_poem)
+    prompt_template = PromptTemplate(input_variables=["lang", "suggestion"], template=template_poem)
     poem_chain = LLMChain(llm=llm, prompt=prompt_template, output_key="poem")
 
     st.toast('กำลังเขียนบทกลอน...📝')
 
-    overall_chain = SequentialChain(chains=[lang_chain, cons_chain, sum_chain, poem_chain],
+    overall_chain = SequentialChain(chains=[lang_chain, cons_chain, poem_chain],
                                     input_variables=["issue", "style"],
-                                    output_variables=["lang", "suggestion", "summary", "poem"],
+                                    output_variables=["lang", "suggestion", "poem"],
                                     verbose=False)
     return overall_chain
 
@@ -78,7 +83,7 @@ def build_sequential_llm():
 openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
 
 # set page title and favicon.
-st.title('🔮 :red[เซียมซี]:violet[แม่หมออ้อย-ฉอด]')
+st.title('🔮 :red[เซียมซี]:violet[แม่หมอ GPT]')
 st.subheader("*บริการปรึกษาปัญหาใจ คลายทุกข์ผ่าน :red[บทกลอน]*")
 
 # Add a form to the page.
@@ -96,9 +101,11 @@ with st.form('my_form'):
 
     input_dict = {"issue":issue, "style": style}
 
-    st.info("หลับตา ตั้งจิตอธิษฐานแล้วกดปุ่มเขย่าเซียมซี")
+    st.error("หลับตา ตั้งจิตอธิษฐานแล้วกดปุ่มเขย่าเซียมซี")
     # Add a submit button.
     submitted = st.form_submit_button('เขย่าเซียมซี!', type='primary')
+
+    
     # If the user has not entered their OpenAI API key, display a warning.
     if not openai_api_key.startswith('sk-'):
         st.warning('Please enter your OpenAI API key!', icon='⚠')
@@ -112,8 +119,9 @@ with st.form('my_form'):
         st.balloons()
         
         try:
-            summary = result['summary']
-            st.subheader('คำทำนายหมายเลข '+':red[{}]: {}'.format(randint(1,20), summary), divider='violet')
+            st.subheader('คำทำนายหมายเลข '+':red[{}]'.format(randint(1,20)), divider='violet')
+            lang = result['lang']
+            st.info("แม่หมอก็พูดได้นะ... {}".format(lang))
             st.caption("แม่หมอแนะนำว่า ... ")
             poem = result['poem'].split("\n\n")
             for p in poem:
